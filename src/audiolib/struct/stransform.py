@@ -10,4 +10,4 @@ def to_melspectrogram(songs, n_fft = 2048, hop_length = 512):
 
   # map transformation of input songs to melspectrogram using log-scale
   tsongs = map(melspec, songs)
-  return np.array(tsongs)
+  return np.array(list(tsongs))
