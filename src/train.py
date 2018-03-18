@@ -2,40 +2,15 @@ import logging
 import argparse
 
 # Imports from the module we wrapped our functions
-from audiolib.struct import RawAudio
-from audiolib.struct import to_melspectrogram
+from audiolib import gtzan_parser
+from audiolib.struct import RawAudio, to_melspectrogram
+from audiolib.ttsplit import ttsplit_cml, ttsplit_cnn
 
 # List with all the genres available on the GTZAN dataset
 classes = [
   'metal', 'disco', 'classical', 'hiphop', 'jazz',
   'country', 'pop', 'blues', 'reggae', 'rock'
 ]
-
-def gtzan_parser():
-  parser = argparse.ArgumentParser(description='Music Genre Recognition on GTZAN')
-
-  # Required arguments
-  parser.add_argument('--ctype', 
-      help='Choose the type of the Classifier (CML, 1D or 2D)',
-      type=str, required=True)
-  parser.add_argument('--fread',
-      help='Choose How to read the files (RAW or NPY)', 
-      type=str, required=True)
-
-  # Almost optional arguments. Should be filled according to the option of the requireds
-  parser.add_argument('-d', '--directory', 
-      help='Path to the root directory with GTZAN files', type=str)
-  parser.add_argument('-s', '--save', 
-      help='Save the RAW audios to NPY format', type=bool)
-  parser.add_argument('--songs', 
-      help='File path to the NPY file with songs as numpy arrays', type=str)
-  parser.add_argument('--genres', 
-      help='File path to the NPY file with genres one-hot encoded as numpy arrays', type=str)
-  parser.add_argument('--savedir', 
-      help='Path to where save the NPY files', type=str)
-
-
-  return parser
 
 def main(args):
   # Validate how to retrieve the data
@@ -53,13 +28,26 @@ def main(args):
     RawAudio.save_data(songs = songs, genres = genres, file_path = args.savedir)
 
   if args.ctype == 'CML':
+    # Get audio features from songs
     ds = get_features(songs)
+
+    # split the dataset in train and test
+    x_train, y_train, x_test, y_test = ttsplit_cml(ds)
+
   elif args.ctype == '1D' or '2D':
     # Convert the songs to melspectrograms
     melspecs = to_melspectrogram(songs)
 
+    # split the dataset in train and test for cnn models
+    x_train, y_train, x_test, y_test = ttsplit_cml(melspecs, args.ctype)
+
+  else:
+    raise Exception('ctype invalid')
+
   # Deallocate memory
   del songs
+  del melspecs
+  del genres
 
 if __name__ == '__main__':
   parser = gtzan_parser()
