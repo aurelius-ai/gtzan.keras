@@ -30,24 +30,33 @@ def main(args):
   if args.ctype == 'CML':
     # Get audio features from songs
     ds = get_features(songs)
-
-    # split the dataset in train and test
-    x_train, y_train, x_test, y_test = ttsplit_cml(ds)
-
   elif args.ctype == '1D' or '2D':
     # Convert the songs to melspectrograms
     melspecs = to_melspectrogram(songs)
-
-    # split the dataset in train and test for cnn models
-    x_train, y_train, x_test, y_test = ttsplit_cml(melspecs, args.ctype)
-
   else:
     raise Exception('ctype invalid')
+
+  # training exec times to ensure was no split luck
+  for it in range(args.exec):
+    if args.ctype == 'CML':
+      # split the dataset in train and test
+      x_train, y_train, x_test, y_test, x_val, y_val = ttsplit_cml(ds)
+      model = train_cml(x_train, y_train, x_val, y_val)
+    else:
+      # split the dataset in train and test for cnn models
+      x_train, y_train, x_test, y_test, x_val, y_val = ttsplit_cnn(melspecs, args.ctype)
+      model = train_cnn(x_train, y_train, x_val, y_val)
 
   # Deallocate memory
   del songs
   del melspecs
   del genres
+
+def train_cnn(x_train, y_train, x_val, y_val):
+  pass
+
+def train_cml(x_train, y_train, x_val, y_val):
+  pass
 
 if __name__ == '__main__':
   parser = gtzan_parser()

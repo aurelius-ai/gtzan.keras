@@ -1,5 +1,5 @@
 from .features import *
-from .generator import *
+from .utils import *
 from .models import *
 from .struct import *
 from .ttsplit import *
@@ -30,5 +30,7 @@ def gtzan_parser():
       help='Path to where save the NPY files', type=str)
   parser.add_argument('--model', 
       help='Choose the 2D CNN pre-trained model/architecture', type=str)
+  parser.add_argument('--exec', 
+      help='Number of times to execute the training process', nargs='?', const=5, type=int)
 
   return parser
