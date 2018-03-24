@@ -23,6 +23,9 @@ classes = [
   'country', 'pop', 'blues', 'reggae', 'rock'
 ]
 
+# python train.py --ctype 1D --fread NPY --songs ../dataset/GTZAN/songs.npy --genres ../dataset/GTZAN/genres.npy --exec 5
+# python train.py --ctype 1D --fread RAW -d ../dataset/GTZAN/ --savedir ../dataset/GTZAN/ --exec 5
+
 def main(args):
   # Validate how to retrieve the data
   if args.fread == 'RAW':
@@ -44,6 +47,8 @@ def main(args):
   elif args.ctype == '1D' or '2D':
     # Convert the songs to melspectrograms
     melspecs = to_melspectrogram(songs)
+    print(np.mean(songs), np.max(songs), np.min(songs))
+    print(np.mean(melspecs), np.max(melspecs), np.min(melspecs))
   else:
     raise Exception('ctype invalid')
 
@@ -58,15 +63,18 @@ def main(args):
     if args.ctype == 'CML':
       # split the dataset in train and test
       x_train, y_train, x_test, y_test, x_val, y_val = ttsplit_cml(ds, genres)
-      print("Data size: (train, test, val)")
-      print(x_train.shape, x_test.shape, x_val.shape)
+      print("train, test and val size: {}, {}, {}".format(x_train.shape, x_test.shape, x_val.shape))
+      
+      # Start training process
       model = train_cml(x_train, y_train, x_val, y_val)
     else:
       # split the dataset in train and test for cnn models
       x_train, y_train, x_test, y_test, x_val, y_val = ttsplit_cnn(melspecs, genres, args.ctype)
-      print("Data size: (train, test, val)")
-      print(x_train.shape, x_test.shape, x_val.shape)
-      model, hist = train_cnn(x_train, y_train, x_val, y_val, args.ctype, x_train[0].shape)
+      print("train, test and val size: {}, {}, {}".format(x_train.shape, x_test.shape, x_val.shape))
+      
+      # Start training process in keras
+      input_shape = x_train[0].shape
+      model, hist = train_cnn(x_train, y_train, x_val, y_val, args.ctype, input_shape)
 
   # Deallocate memory
   del songs
@@ -80,7 +88,7 @@ def train_cnn(X_train, y_train, X_Val, y_val, ctype, input_shape):
   if ctype == '1D':
     cnn = get_cnn1d(input_shape)
   elif ctype == '2D':
-    cnn = get_cnn2d()
+    cnn = get_cnn2d(input_shape)
 
   print("Number of parameters: %d" % cnn.count_params())
   
