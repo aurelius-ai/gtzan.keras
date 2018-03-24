@@ -74,7 +74,8 @@ def main(args):
       
       # Start training process in keras
       input_shape = x_train[0].shape
-      model, hist = train_cnn(x_train, y_train, x_val, y_val, args.ctype, input_shape)
+      model, hist = train_cnn(x_train, y_train, x_val, y_val, args.ctype, 
+        input_shape, args.batch_size, args.epochs)
 
   # Deallocate memory
   del songs
@@ -84,7 +85,7 @@ def main(args):
   # Call garbage collect
   gc.collect()
 
-def train_cnn(X_train, y_train, X_Val, y_val, ctype, input_shape):
+def train_cnn(X_train, y_train, X_Val, y_val, ctype, input_shape, batch_size, epochs):
   if ctype == '1D':
     cnn = get_cnn1d(input_shape)
   elif ctype == '2D':
@@ -92,28 +93,28 @@ def train_cnn(X_train, y_train, X_Val, y_val, ctype, input_shape):
 
   print("Number of parameters: %d" % cnn.count_params())
   
-  # Optmizer
+  # Optimizers
   sgd = keras.optimizers.SGD(lr=0.001, momentum=0.9, decay=1e-5, nesterov=True)
   adam = keras.optimizers.Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=1e-5)
-
+  
   # Compiler for the model
   cnn.compile(loss=keras.losses.categorical_crossentropy,
     optimizer=sgd,
     metrics=['accuracy'])
 
   # Early stop
-  earlystop = keras.callbacks.EarlyStopping(monitor = 'val_loss',
-    min_delta = 0,
-    patience = 2,
-    verbose = 0,
-    mode = 'auto')
+  earlystop = keras.callbacks.EarlyStopping(monitor='val_loss',
+    min_delta=0,
+    patience=2,
+    verbose=0,
+    mode='auto')
 
   # Fit the model
   history = cnn.fit(X_train, y_train,
-    batch_size = 128,
-    epochs = 100,
-    verbose = 1,
-    validation_data = (X_Val, y_val),
+    batch_size=batch_size,
+    epochs=epochs,
+    verbose=1,
+    validation_data=(X_Val, y_val),
     callbacks = [earlystop])
 
   return cnn, history
