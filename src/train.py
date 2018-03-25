@@ -1,3 +1,4 @@
+import os
 import gc
 import logging
 import argparse
@@ -13,9 +14,13 @@ from keras import backend as K
 
 # Imports from the module we wrapped our functions
 from audiolib import gtzan_parser
-from audiolib.struct import RawAudio, to_melspectrogram
-from audiolib.ttsplit import ttsplit_cml, ttsplit_cnn
 from audiolib.models import get_cnn1d
+from audiolib.utils import splitsongs
+from audiolib.utils import RawAudio, to_melspectrogram
+from audiolib.utils import ttsplit_cml, ttsplit_cnn
+
+# Disable TF warnings about speed up
+os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 
 # List with all the genres available on the GTZAN dataset
 classes = [
@@ -37,20 +42,28 @@ def main(args):
 
   # Get the data as numpy arrays
   songs, genres = audio.get_data()
+  print("Original sound array shape: {}".format(songs.shape))
 
+  # Save the data asked for
   if args.save and args.fread == 'RAW':
     RawAudio.save_data(songs = songs, genres = genres, file_path = args.savedir)
 
+  # Split the songs array in multiple pieces of songs
+  songs, genres = splitsongs(songs, genres)
+  print("After split sound array shape: {}".format(songs.shape))
+ 
+  # Choose how to process the songs according to classifier type
   if args.ctype == 'CML':
     # Get audio features from songs
     ds = get_features(songs)
   elif args.ctype == '1D' or '2D':
     # Convert the songs to melspectrograms
     melspecs = to_melspectrogram(songs)
-    print(np.mean(songs), np.max(songs), np.min(songs))
-    print(np.mean(melspecs), np.max(melspecs), np.min(melspecs))
   else:
     raise Exception('ctype invalid')
+
+  # Deallocate memory
+  del songs
 
   # training exec times to ensure was no split luck
   for it in range(args.exec):
@@ -78,7 +91,6 @@ def main(args):
         input_shape, args.batch_size, args.epochs)
 
   # Deallocate memory
-  del songs
   del melspecs
   del genres
 
@@ -94,28 +106,19 @@ def train_cnn(X_train, y_train, X_Val, y_val, ctype, input_shape, batch_size, ep
   print("Number of parameters: %d" % cnn.count_params())
   
   # Optimizers
-  sgd = keras.optimizers.SGD(lr=0.001, momentum=0.9, decay=1e-5, nesterov=True)
-  adam = keras.optimizers.Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=1e-5)
+  sgd = keras.optimizers.SGD(lr=0.0005, momentum=0.9, decay=1e-5, nesterov=True)
   
   # Compiler for the model
   cnn.compile(loss=keras.losses.categorical_crossentropy,
     optimizer=sgd,
     metrics=['accuracy'])
 
-  # Early stop
-  earlystop = keras.callbacks.EarlyStopping(monitor='val_loss',
-    min_delta=0,
-    patience=2,
-    verbose=0,
-    mode='auto')
-
   # Fit the model
   history = cnn.fit(X_train, y_train,
     batch_size=batch_size,
     epochs=epochs,
     verbose=1,
-    validation_data=(X_Val, y_val),
-    callbacks = [earlystop])
+    validation_data=(X_Val, y_val))
 
   return cnn, history
 

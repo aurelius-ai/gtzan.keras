@@ -1,4 +1,4 @@
-from ..utils import *
+from . import *
 from sklearn.model_selection import train_test_split
 
 # @Function: ttsplit_cml
@@ -18,10 +18,5 @@ def ttsplit_cnn(melspec, genres, ctype):
   # Split training set into training and validation
   X_train, X_Val, y_train, y_val = train_test_split(
     X_train, y_train, test_size=1/6, stratify=y_train)
-
-  # split the train, test and validation data in size 128x128
-  X_Val, y_val = splitsongs_melspect(X = X_Val, y = y_val, cnn_type = ctype)
-  X_test, y_test = splitsongs_melspect(X = X_test, y = y_test, cnn_type = ctype)
-  X_train, y_train = splitsongs_melspect(X = X_train, y = y_train, cnn_type = ctype)
 
   return X_train, y_train, X_test, y_test, X_Val, y_val

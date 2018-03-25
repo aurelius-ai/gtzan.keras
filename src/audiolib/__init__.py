@@ -1,8 +1,6 @@
 from .features import *
 from .utils import *
 from .models import *
-from .struct import *
-from .ttsplit import *
 
 import argparse
 
@@ -33,7 +31,7 @@ def gtzan_parser():
   parser.add_argument('--exec', 
       help='Number of times to execute the training process', nargs='?', const=1, type=int, default=5)
   parser.add_argument('--batch_size', 
-      help='Number of songs per batch on CNN training', nargs='?', const=1, type=int, default=32)
+      help='Number of songs per batch on CNN training', nargs='?', const=1, type=int, default=64)
   parser.add_argument('--epochs', 
       help='Number of epochs', nargs='?', const=1, type=int, default=100)
 
